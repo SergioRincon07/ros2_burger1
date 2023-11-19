@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="burger1">
+
+  <!-- Include base link description -->
+  <xacro:include filename="base_link.xacro"/>
+
+  <!-- Use the base_link macro -->
+  <!-- <xacro:base_link/> -->
+  
+</robot>
