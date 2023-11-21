@@ -30,8 +30,10 @@ find_package(xacro REQUIRED)
 
 # add_custom_target(urdf ALL COMMAND "ros2" "launch" ${PROJECT_NAME} "wamv_description.launch.py")
 
-install(DIRECTORY resource/
-  DESTINATION share/${PROJECT_NAME}/resource)
+install(
+  DIRECTORY resource launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
