@@ -8,5 +8,6 @@ echo "Iniciando construcción en la Raspberry Pi..."
 
 # Construir paquetes específicos para la Raspberry Pi
 colcon build --packages-select burger1_motors
+source install/setup.bash
 
 echo "Construcción en la Raspberry Pi completada."

@@ -8,5 +8,6 @@ echo "Iniciando construcción en la Desktop ..."
 
 # Construir paquetes específicos para la Raspberry Pi
 colcon build --packages-select burger1_description
+source install/setup.bash
 
 echo "Construcción en la Desktop completada."
