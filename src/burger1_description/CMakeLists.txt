@@ -31,7 +31,7 @@ find_package(xacro REQUIRED)
 # add_custom_target(urdf ALL COMMAND "ros2" "launch" ${PROJECT_NAME} "wamv_description.launch.py")
 
 install(
-  DIRECTORY resource launch
+  DIRECTORY resource launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
