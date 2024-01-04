@@ -7,7 +7,7 @@ echo "Iniciando construcción en la Raspberry Pi..."
 # (puedes agregar comandos para instalar dependencias, configurar variables de entorno, etc.)
 
 # Construir paquetes específicos para la Raspberry Pi
-colcon build --packages-select burger1_motors
+colcon build --packages-select burger1_robot
 source install/setup.bash
 
 echo "Construcción en la Raspberry Pi completada."
