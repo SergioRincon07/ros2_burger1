@@ -25,7 +25,7 @@ namespace burger1_robot
 class DiffBotSystemHardware : public hardware_interface::SystemInterface
 {
 public:
-  RCLCPP_SHARED_PTR_DEFINITIONS(DiffBotSystemHardware);
+  RCLCPP_SHARED_PTR_DEFINITIONS(DiffBotSystemHardware)
 
   ROS2_CONTROL_PUBLIC
   // Método llamado durante la inicialización del hardware
