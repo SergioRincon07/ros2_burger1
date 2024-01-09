@@ -1,75 +1,100 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+from launch.substitutions import Command, PathJoinSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
-from launch.actions import RegisterEventHandler
-from launch.event_handlers import OnProcessStart
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration
 from launch_ros.substitutions import FindPackageShare
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import FindExecutable
 
 def generate_launch_description():
-    # Include the robot_state_publisher launch file, provided by our own package. Force sim time to be enabled
-    # !!! MAKE SURE YOU SET THE PACKAGE NAME CORRECTLY !!!
-
-    package_name='burger1_description' #<--- CHANGE ME
-
-    rsp = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory(package_name),'launch','launch_description.py'
-                )]), launch_arguments={'use_sim_time': 'false'}.items()
+    # Declare arguments
+    declared_arguments = []
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_sim_time",
+            default_value="false",
+            description="Use simulation time.",
+        )
     )
 
-    robot_description_content = Command(['ros2 param get --hide-type /robot_state_publisher robot_description'])
-    controller_params_file = PathJoinSubstitution(
+    # Initialize Arguments
+    use_sim_time = LaunchConfiguration("use_sim_time")
+
+    # Include the robot_state_publisher launch file, provided by our own package.
+    package_name = 'burger1_description'  # CHANGE ME
+    rsp = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+            get_package_share_directory(package_name), 'launch', 'launch_description.py'
+        )]), launch_arguments={'use_sim_time': use_sim_time}.items()
+    )
+
+    # Get robot description
+    robot_description_content = Command(
         [
-            FindPackageShare("burger1_description"),
-            "config",
-            "my_controllers.yaml",
+            PathJoinSubstitution([FindExecutable(name="xacro")]),
+            " ",
+            PathJoinSubstitution(
+                [FindPackageShare("burger1_description"), "resource", "burger1.urdf.xacro"]
+            ),
         ]
     )
-
     robot_description = {"robot_description": robot_description_content}
 
+    # Controller parameters file
+    controller_params_file = PathJoinSubstitution(
+        [FindPackageShare("burger1_description"), "config", "my_controllers.yaml"]
+    )
+
+    # Controller manager node
     controller_manager = Node(
         package="controller_manager",
         executable="ros2_control_node",
         parameters=[robot_description, controller_params_file],
+        output="screen",
     )
 
-    delayed_controller_manager = TimerAction(period=3.0, actions=[controller_manager])
-
+    # Diff drive spawner node
     diff_drive_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["diff_cont", "--controller-manager", "/controller_manager"],
+        output="screen",
     )
 
-    delayed_diff_drive_spawner = RegisterEventHandler(
-        event_handler=OnProcessStart(
-            target_action=controller_manager,
-            on_start=[diff_drive_spawner],
-        )
-    )
-
+    # Joint broadcaster spawner node
     joint_broad_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_broad", "--controller-manager", "/controller_manager"],
+        output="screen",
     )
 
-    delayed_joint_broad_spawner = RegisterEventHandler(
-        event_handler=OnProcessStart(
+    # Delay diff_drive_spawner start after controller_manager
+    delayed_diff_drive_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
             target_action=controller_manager,
-            on_start=[joint_broad_spawner],
+            on_exit=[diff_drive_spawner],
         )
     )
 
-    # Launch them all!
-    return LaunchDescription([
+    # Delay joint_broad_spawner start after controller_manager
+    delayed_joint_broad_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=controller_manager,
+            on_exit=[joint_broad_spawner],
+        )
+    )
+
+    # Launch all nodes
+    nodes = [
         rsp,
-        delayed_controller_manager,
+        controller_manager,
         delayed_diff_drive_spawner,
-        delayed_joint_broad_spawner
-    ])
+        delayed_joint_broad_spawner,
+    ]
+
+    return LaunchDescription(declared_arguments + nodes)
